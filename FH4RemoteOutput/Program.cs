@@ -1,56 +1,79 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace FH4RemoteOutput
+namespace FH4A
 {
-    [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    struct ForzaUDP //324bytes
+    
+    public class DataConfig
     {
-        int _0x0;//0x1
-        uint PackageCount;
-        uint CarID; //f97f3b46  f9df2b46 f6fff945
-        uint ConstBytes;//f8ff4744
-        float GforceY,GforceX, GforceZ;
-        float _7;
-        float _8, _9;
-        float speed;
-        float _11, _12, _13;
-        uint _14,_15,_16;
-        float SFL, SFR, SBL, SBR;//Spring17-20
-        float WFL, WFR, WBL, WBR;//WheelFraction21-24
-        float WSFL, WSFR, WSBL, WSBR;//wheelSpeed 25-28
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        uint[] Unkown; //29-36
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
-        int[] HitAbout1;//36-40 bool?
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
-        float[] WheelAbout;//41-44
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        float[] WheelFraction;//?45-48
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        float[] Unkown2;//?49-52
-        int CarID2, CarLevel, CarLevelPoint, _56;//D-X 1-6
-        int ConstCar1, ConstCar2, HitAbout2, HitAbout3;//57-60
-        float X, Y, Z, Speed;//61-64
-        float Power, Torsion;//65-66
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        float[] TireTemp;//67-70
-        int _71, _72, _73_0,_74_0,_75,_76;
-        float PlayTime;//seconds,hungeNumber
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
-        ushort[] Control;//Accelerator breaker...
-
-
-
+        public static int size = Marshal.SizeOf(typeof(ForzaUDP));
     }
-    class Program
+    [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct Vector3
     {
-        static void Main(string[] args)
+        float X, Y, Z;
+        float Right { get => X; set => X = value; }
+        float Up { get => Y; set => Y = value; }
+        float Forward { get => Z; set => Z = value; }
+    }
+
+    [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct Tire
+    {
+        public float FrontRight, FrontLeft, RearLeft, RearRight;
+    }
+    [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct TireInt
+    {
+        public int FrontRight, FrontLeft, RearLeft, RearRight;
+    }
+
+    [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    public struct ForzaUDP //322bytes
+    {
+        public int IsRaceOn;//0x1
+        public uint TimestampMS;
+        public float EngineMaxRpm; //f97f3b46  f9df2b46 f6fff945
+        public float EngineIdleRpm;//f8ff4744
+        public float CurrentEngineRpm;
+        public Vector3 Acceleration, Speed, AngularVelocity;
+        public float Yaw, Pitch, Roll;
+        public Tire Suspension;//17
+        public Tire SlipRatio; //21-24  Tire normalized slip ratio, = 0 means 100% grip and |ratio| > 1.0 means loss of grip.
+        public Tire RotationSpeed;//25-28 radians/sec
+        public TireInt RumbleStrip;//29-32  1 when wheel is on rumble strip, = 0 when off
+        public Tire PuddleDepth;//33-36 0-1
+        public Tire SurfaceRumble;//37-40  controller force feedback
+        public Tire SlipAngle;//41-44 Tire normalized slip angle, = 0 means 100% grip and |angle| > 1.0 means loss of grip.
+        public Tire CombinedSlip;//45-48 Tire normalized combined slip, = 0 means 100% grip and |slip| > 1.0 means loss 
+        public Tire SuspensionTravelMeters; //49-52 Actual suspension travel in meters
+        public int CarID;
+        public int CarClass; // 0-7 D C B A S S2 X
+        public int CarPoint; // 100 - 999
+        public int DrivetrainType; //Corresponds to EDrivetrainType; 0 = FWD, 1 = RWD, 2 = AWD
+        public int Cylinders;//57 Number of cylinders in the engine
+        public int _58,_69,_60;// 58 59 60
+        public Vector3 position; //meters 61
+        public float MeterSpeed;//64
+        public float Power;// watts
+        public float Torque; // N/m
+        public Tire Temprature; //67-70
+        public float Boost, Fuel, DistanceTraveled; //71 72 73
+        public float BestLap, LastLap, CurrentLap, CurrentRaceTime;// 74-77
+        public UInt16 LapNumber;//312
+        public byte RacePosition;//314
+                  // 315     316     317       318     319
+        public byte Accel, Breake, Clutch, HandBrake, Gear;
+        public sbyte Steer, NormalizedDrivingLine, NormalizedAIBrakeDifference;
+
+        public ForzaUDP FromBytes(byte[] data)
         {
+            IntPtr buffer = Marshal.AllocHGlobal(DataConfig.size);
+            Marshal.Copy(data, 0, buffer, data.Length);
+            return (ForzaUDP)Marshal.PtrToStructure(buffer, typeof(ForzaUDP));
         }
+
     }
 }
